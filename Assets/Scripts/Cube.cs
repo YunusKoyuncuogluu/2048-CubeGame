@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using TMPro;
+
 public class Cube : MonoBehaviour
 {
     internal CubeManager _cubeManager;
@@ -22,7 +23,8 @@ public class Cube : MonoBehaviour
 
     private void OnDisable()
     {
-        OnMatchCube -= _cubeManager.UpgradeCube;
+        if (_cubeManager != null)
+            OnMatchCube -= _cubeManager.UpgradeCube;
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -37,10 +39,8 @@ public class Cube : MonoBehaviour
                 isMatch = true;
                 Vector3 spawnPos = (transform.position + cube.transform.position) / 2;
                 OnMatchCube?.Invoke(_rank, spawnPos);
-                //PoolingSystem.Instance.DestroyAPS(gameObject);
-                //PoolingSystem.Instance.DestroyAPS(cube.gameObject);
-                gameObject.SetActive(false);
-                cube.gameObject.SetActive(false);
+                PoolingSystem.Instance.DestroyAPS(gameObject);
+                PoolingSystem.Instance.DestroyAPS(cube.gameObject);
             }
         }
     }

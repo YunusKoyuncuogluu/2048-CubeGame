@@ -2,10 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using DG.Tweening;
 
 using Random = UnityEngine.Random;
 public class CubeManager : MonoBehaviour
 {
+    [SerializeField] private GameObject _cubeStartOutline;
     [SerializeField] private float _clampValue;
     [SerializeField] private Transform _cubeSpawnPosition;
     [SerializeField] private GameObject _cubePrefab;
@@ -14,6 +16,8 @@ public class CubeManager : MonoBehaviour
     private GameObject _currentCube;
 
     public List<CubeInfo> cubeInfos;
+
+    private Tween _startBubbleAnimation;
 
     public enum CubeRank
     {
@@ -48,10 +52,19 @@ public class CubeManager : MonoBehaviour
     void Start()
     {
         StartCoroutine(SpawnCube(0f));
+        _startBubbleAnimation = _cubeStartOutline.transform.DOScale(Vector3.one * 1.3f, 1f).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
     }
 
     void Update()
     {
+        if (Input.GetMouseButtonDown(0) && _currentCube)
+        {
+            _cubeStartOutline.transform.DOScale(Vector3.one, 0.2f).OnComplete(() =>
+            {
+                _startBubbleAnimation.Rewind();
+            });
+        }
+
         ThrowCube();
         SwipeCurrentCube();
     }
@@ -64,7 +77,7 @@ public class CubeManager : MonoBehaviour
             {
                 cube.PushCube(25f);
                 _currentCube = null;
-                StartCoroutine(SpawnCube(.2f));
+                StartCoroutine(SpawnCube(.3f));
             }
         }
     }
@@ -81,19 +94,26 @@ public class CubeManager : MonoBehaviour
     private IEnumerator SpawnCube(float waitTime)
     {
         yield return new WaitForSeconds(waitTime);
-        GameObject cube = Instantiate(_cubePrefab, _cubeSpawnPosition.position, Quaternion.identity);
-        //GameObject cube = PoolingSystem.Instance.InstantiateAPS("CubePrefab", _cubeSpawnPosition.position, Quaternion.identity);
+        GameObject cube = PoolingSystem.Instance.InstantiateAPS("CubePrefab", _cubeSpawnPosition.position, Quaternion.identity);
 
         _currentCube = cube;
 
         if (cube.TryGetComponent(out Cube cb))
         {
+            cb.isMatch = false;
             cb._cubeManager = this;
             cb.OnMatchCube += UpgradeCube;
 
             int rand = Random.Range(0, (cubeInfos.Count / 2));
             cb.Initialize(cubeInfos[rand]);
         }
+
+        cube.transform.localScale = Vector3.zero;
+        _startBubbleAnimation.Play();
+        cube.transform.DOScale(Vector3.one * 1.4f, .15f).OnComplete(() =>
+        {
+            cube.transform.DOScale(Vector3.one, .15f).SetEase(Ease.OutSine);
+        }).SetEase(Ease.InSine);
     }
 
     internal void UpgradeCube(CubeRank rank, Vector3 spawnPos)
@@ -104,11 +124,11 @@ public class CubeManager : MonoBehaviour
             {
                 if (i + 1 <= cubeInfos.Count)
                 {
-                    GameObject obj = Instantiate(_cubePrefab, spawnPos, Quaternion.identity);
-                    //GameObject obj = PoolingSystem.Instance.InstantiateAPS("CubePrefab", spawnPos, Quaternion.identity);
+                    GameObject obj = PoolingSystem.Instance.InstantiateAPS("CubePrefab", spawnPos, Quaternion.identity);
 
                     if (obj.TryGetComponent(out Cube cube))
                     {
+                        cube.isMatch = false;
                         cube._cubeManager = this;
                         cube.OnMatchCube += UpgradeCube;
 

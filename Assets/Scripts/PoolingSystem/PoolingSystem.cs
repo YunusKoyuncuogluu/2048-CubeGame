@@ -18,7 +18,7 @@ using Sirenix.OdinInspector;
         public List<GameObject> clones;
     }
 
-    public class PoolingSystem : MonoBehaviour//Singletonw<PoolingSystem>
+    public class PoolingSystem : Singleton<PoolingSystem>
     {
         public List<SourceObjects> SourceObjects = new List<SourceObjects>();
 
